@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RealtyScan — парсер недвижимости</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600;800&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css?v=2" />
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <span class="logo-icon">⬡</span>
+    <span class="logo-text">Realty<b>Scan</b></span>
+  </div>
+  <nav class="header-nav">
+    <button class="nav-btn active" data-view="search">Поиск</button>
+    <button class="nav-btn" data-view="history">История</button>
+    <button class="nav-btn" data-view="docs">Добавить сайт</button>
+  </nav>
+</header>
+
+<!-- ═══ SEARCH VIEW ═══ -->
+<div id="view-search" class="view active">
+  <div class="sidebar">
+    <div class="sidebar-title">Фильтры</div>
+
+    <label class="field-label">Источники
+      <div id="sources-list" class="sources-list">
+        <div class="skeleton-line"></div>
+      </div>
+    </label>
+
+    <label class="field-label">Тип сделки
+      <select id="deal-type" class="field-select">
+        <option value="sale">Продажа</option>
+        <option value="rent">Аренда</option>
+      </select>
+    </label>
+
+    <label class="field-label">Тип недвижимости
+      <select id="prop-type" class="field-select">
+        <option value="apartment">Квартира</option>
+        <option value="house" selected>Дом / коттедж</option>
+        <option value="commercial">Коммерческая</option>
+      </select>
+    </label>
+
+    <label class="field-label">Город
+      <input id="city" class="field-input" type="text" placeholder="Луганск" value="Луганск" />
+    </label>
+
+
+    <div class="field-label">Расположение
+      <div id="districts-list" class="districts-list">
+        <label class="district-check">
+          <input type="checkbox" name="district" value="южн" checked/>
+          <span>кв. Южный</span>
+        </label>
+        <label class="district-check">
+          <input type="checkbox" name="district" value="косиор" checked />
+          <span>пос. Косиора</span>
+        </label>
+        <label class="district-check">
+          <input type="checkbox" name="district" value="сталинград" checked/>
+          <span>кв. Героев Сталинграда</span>
+        </label>
+      </div>
+      <div class="district-hint">Не выбрано — все районы</div>
+    </div>
+    <label class="field-label">Комнаты
+      <select id="rooms" class="field-select">
+        <option value="">Любое</option>
+        <option value="0">Студия</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4+</option>
+      </select>
+    </label>
+
+    <div class="range-row">
+      <label class="field-label half">Цена от
+        <input id="price-min" class="field-input" type="number" placeholder="0" />
+      </label>
+      <label class="field-label half">до
+        <input id="price-max" class="field-input" type="number" placeholder="∞" />
+      </label>
+    </div>
+
+    <div class="range-row">
+      <label class="field-label half">Площадь от
+        <input id="area-min" class="field-input" type="number" placeholder="м²" value="70"/>
+      </label>
+      <label class="field-label half">до
+        <input id="area-max" class="field-input" type="number" placeholder="м²" />
+      </label>
+    </div>
+
+    <button id="parse-btn" class="parse-btn">
+      <span class="parse-btn-icon">▶</span> Запустить парсинг
+    </button>
+  </div>
+
+  <main class="main-content">
+    <!-- Status bar -->
+    <div id="status-bar" class="status-bar hidden">
+      <div class="status-spinner"></div>
+      <span id="status-text">Подготовка…</span>
+      <div id="source-progress" class="source-progress"></div>
+    </div>
+
+    <!-- Results toolbar -->
+    <div id="results-toolbar" class="results-toolbar hidden">
+      <div class="results-count"><span id="count">0</span> объявлений</div>
+      <div class="toolbar-controls">
+        <select id="sort-by" class="field-select small">
+          <option value="price">По цене</option>
+          <option value="area">По площади</option>
+          <option value="rooms">По комнатам</option>
+        </select>
+        <select id="sort-dir" class="field-select small">
+          <option value="asc">↑ По возрастанию</option>
+          <option value="desc">↓ По убыванию</option>
+        </select>
+        <div class="view-toggle">
+          <button id="grid-btn" class="toggle-btn active" title="Сетка">▦</button>
+          <button id="list-btn" class="toggle-btn" title="Список">☰</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Listings grid -->
+    <div id="listings" class="listings-grid"></div>
+
+    <!-- Empty state -->
+    <div id="empty-state" class="empty-state">
+      <div class="empty-icon">⬡</div>
+      <div class="empty-title">Настройте фильтры и запустите парсинг</div>
+      <div class="empty-sub">Данные будут собраны со всех выбранных источников</div>
+    </div>
+  </main>
+</div>
+
+<!-- ═══ HISTORY VIEW ═══ -->
+<div id="view-history" class="view">
+  <div class="page-content">
+    <h2 class="page-title">История заданий</h2>
+    <div id="jobs-list" class="jobs-list"></div>
+  </div>
+</div>
+
+<!-- ═══ DOCS VIEW ═══ -->
+<div id="view-docs" class="view">
+  <div class="page-content">
+    <h2 class="page-title">Как добавить новый сайт</h2>
+    <div class="docs-body">
+      <div class="doc-step">
+        <div class="doc-num">01</div>
+        <div>
+          <div class="doc-head">Создайте файл парсера</div>
+          <pre class="code-block"><span class="cm"># parsers/my_site_parser.py</span>
+<span class="ck">from</span> .base <span class="ck">import</span> BaseParser
+
+<span class="ck">class</span> <span class="cn">MySiteParser</span>(BaseParser):
+    name         = <span class="cs">"my_site"</span>
+    display_name = <span class="cs">"My Site"</span>
+    base_url     = <span class="cs">"https://my-site.ru"</span>
+
+    <span class="ck">def</span> <span class="cn">parse</span>(self, filters):
+        soup = self.get_page(self.base_url + <span class="cs">"/search"</span>, params={
+            <span class="cs">"city"</span>: filters.get(<span class="cs">"city"</span>),
+            <span class="cs">"deal"</span>: filters.get(<span class="cs">"deal_type"</span>),
+        })
+        listings = []
+        <span class="ck">for</span> card <span class="ck">in</span> soup.select(<span class="cs">".card"</span>):
+            listings.append(self._listing(
+                title   = card.select_one(<span class="cs">".title"</span>).text,
+                price   = <span class="cn">int</span>(card.select_one(<span class="cs">".price"</span>).text.replace(<span class="cs">" "</span>, <span class="cs">""</span>)),
+                address = card.select_one(<span class="cs">".addr"</span>).text,
+                url     = card.select_one(<span class="cs">"a"</span>)[<span class="cs">"href"</span>],
+            ))
+        <span class="ck">return</span> listings</pre>
+        </div>
+      </div>
+      <div class="doc-step">
+        <div class="doc-num">02</div>
+        <div>
+          <div class="doc-head">Зарегистрируйте парсер</div>
+          <pre class="code-block"><span class="cm"># parsers/registry.py</span>
+<span class="ck">from</span> .my_site_parser <span class="ck">import</span> MySiteParser
+
+PARSERS = {
+    <span class="cs">"demo"</span>: DemoParser(),
+    <span class="cs">"my_site"</span>: MySiteParser(),   <span class="cm"># ← добавьте</span>
+}</pre>
+        </div>
+      </div>
+      <div class="doc-step">
+        <div class="doc-num">03</div>
+        <div>
+          <div class="doc-head">Перезапустите сервер</div>
+          <pre class="code-block">python app.py</pre>
+          <p style="margin-top:.5rem;opacity:.6">Новый источник появится в списке фильтров автоматически.</p>
+        </div>
+      </div>
+      <div class="doc-step">
+        <div class="doc-num">04</div>
+        <div>
+          <div class="doc-head">Доступные методы BaseParser</div>
+          <pre class="code-block"><span class="cm"># Загрузить страницу → BeautifulSoup</span>
+soup = self.get_page(url, params={})
+
+<span class="cm"># Создать нормализованный листинг</span>
+item = self._listing(
+    title=<span class="cs">""</span>, price=<span class="cn">None</span>, currency=<span class="cs">"RUB"</span>,
+    area=<span class="cn">None</span>, rooms=<span class="cn">None</span>,
+    address=<span class="cs">""</span>, url=<span class="cs">""</span>, image=<span class="cs">""</span>,
+)
+
+<span class="cm"># Поля filters, которые приходят в parse():</span>
+<span class="cm"># deal_type, property_type, city,</span>
+<span class="cm"># price_min, price_max, rooms,</span>
+<span class="cm"># area_min, area_max</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Listing card template (used by JS) -->
+<template id="card-tpl">
+  <div class="listing-card">
+    <div class="card-img-wrap">
+      <img class="card-img" src="" alt="" loading="lazy" />
+      <div class="card-source"></div>
+    </div>
+    <div class="card-body">
+      <div class="card-price"></div>
+      <div class="card-title"></div>
+      <div class="card-meta">
+        <span class="card-area"></span>
+        <span class="card-rooms"></span>
+      </div>
+      <div class="card-addr"></div>
+      <a class="card-link" target="_blank" rel="noopener">Открыть объявление ↗</a>
+    </div>
+  </div>
+</template>
+
+<script src="/static/app.js?v=2"></script>
+</body>
+</html>

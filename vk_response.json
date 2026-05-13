@@ -1,0 +1,28 @@
+{
+  "error": {
+    "error_code": 15,
+    "error_msg": "Access denied: token required",
+    "request_params": [
+      {
+        "key": "owner_id",
+        "value": "-190575575"
+      },
+      {
+        "key": "count",
+        "value": "3"
+      },
+      {
+        "key": "v",
+        "value": "5.131"
+      },
+      {
+        "key": "method",
+        "value": "wall.get"
+      },
+      {
+        "key": "oauth",
+        "value": "1"
+      }
+    ]
+  }
+}
